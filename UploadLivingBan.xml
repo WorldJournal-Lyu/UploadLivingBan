@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<config name="生活版" version="20180103">
+
+	<ban name="周日旅遊" id="45218" printday="7" newspage="-3" graphic="-1" />
+	<ban name="周日理財" id="45221" printday="7" newspage="-3" graphic="-1" />
+
+	<ban name="生活汽車" id="45481" printday="4" newspage="-4" graphic="-4" />
+	<ban name="生活地產" id="45482" printday="5" newspage="-4" graphic="-4" />
+	<ban name="生活安居" id="45483" printday="6" newspage="-4" graphic="-4" />
+	<ban name="生活家庭" id="45485" printday="1" newspage="-4" graphic="-4" />
+	<ban name="生活教育" id="45486" printday="2" newspage="-4" graphic="-4" />
+	<ban name="生活園藝" id="45487" printday="3" newspage="-4" graphic="-4" />	
+
+</config>

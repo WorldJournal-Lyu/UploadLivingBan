@@ -104,7 +104,7 @@ if(Test-Path $xmlPath){
 }
 
 
-Write-Line -Length 100 -Path $log
+Write-Line -Length 50 -Path $log
 
 $banList = @(Get-ChildItem $zuBanRoot | Where-Object{$_.PSIsContainer -and $_.Name -match "^45\d{3}"}) | Where-Object {$xml.config.ban.id -contains ($_.Name).substring(0,5)} 
 
@@ -377,7 +377,7 @@ foreach($ban in $banList){
     }
 
     
-    Write-Line -Length 100 -Path $log
+    Write-Line -Length 50 -Path $log
 
 }
 

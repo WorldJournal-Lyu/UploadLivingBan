@@ -196,8 +196,8 @@ foreach($ban in $banList){
 
             }
 
-            Write-Log -Verb "TO NEWSPAGE" -Noun $newspageSendDate -Path $log -Type Short -Status Normal
-            Write-Log -Verb "TO GRAPHIC " -Noun $graphicSendDate -Path $log -Type Short -Status Normal
+            Write-Log -Verb "newspage" -Noun $newspageSendDate -Path $log -Type Short -Status Normal
+            Write-Log -Verb "graphic " -Noun $graphicSendDate -Path $log -Type Short -Status Normal
 
 
 

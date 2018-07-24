@@ -67,8 +67,8 @@ if ((Get-Date).Hour -le 6){
 
 }
 
-Write-Log -Verb "Today   " -Noun ($toDay + "("+ $weekDay +")") -Path $log -Type Short -Status Normal
-Write-Log -Verb "Tomorrow" -Noun $workDate -Path $log -Type Short -Status Normal
+Write-Log -Verb "toDay" -Noun ($toDay + "("+ $weekDay +")") -Path $log -Type Short -Status Normal
+Write-Log -Verb "workDate" -Noun $workDate -Path $log -Type Short -Status Normal
 
 
 
@@ -104,7 +104,7 @@ if(Test-Path $xmlPath){
 }
 
 
-Write-Line -Length 50 -Path $log
+Write-Line -Length 38 -Path $log
 
 $banList = @(Get-ChildItem $zuBanRoot | Where-Object{$_.PSIsContainer -and $_.Name -match "^45\d{3}"}) | Where-Object {$xml.config.ban.id -contains ($_.Name).substring(0,5)} 
 
@@ -207,15 +207,15 @@ foreach($ban in $banList){
 
                 # newspage date equals current date
 
-                Write-Log -Verb "TO NEWSPAGE" -Noun ($ban.Name + "/" + $date.Name) -Path $log -Type Long -Status Normal
+                Write-Log -Verb "TO NEWSPAGE" -Noun ($ban.Name + " | " + $date.Name) -Path $log -Type Long -Status Normal
                 $expectedNewspage.Remove($ban.Name.Substring(0,5))
 
                 if(Test-Path ($date.FullName+"\*.ok")){
 
-                    if(!(Test-Path ($newspage+"\"+$date.Name.Substring(0,8)))){
+                    if(!(Test-Path ($newspage+$date.Name.Substring(0,8)))){
 
-                        New-Item ($newspage+"\"+$date.Name.Substring(0,8)) -Type Directory | Out-Null
-                        Write-Log -Verb "CREATE NEWSPAGE" -Noun ($newspage+"\"+$date.Name.Substring(0,8)) -Path $log -Type Long -Status Normal
+                        New-Item ($newspage+$date.Name.Substring(0,8)) -Type Directory | Out-Null
+                        Write-Log -Verb "CREATE NEWSPAGE" -Noun ($newspage+$date.Name.Substring(0,8)) -Path $log -Type Long -Status Normal
 
                     }
 
@@ -283,7 +283,7 @@ foreach($ban in $banList){
 
                 # graphic date equals current date
             
-                Write-Log -Verb "TO GRAPHIC" -Noun ($ban.Name + "/" + $date.Name) -Path $log -Type Long -Status Normal
+                Write-Log -Verb "TO GRAPHIC" -Noun ($ban.Name + " | " + $date.Name) -Path $log -Type Long -Status Normal
                 $expectedGraphic.Remove($ban.Name.Substring(0,5))
 
                 if( Test-Path ($date.FullName+"\*.ok") ){
@@ -377,7 +377,7 @@ foreach($ban in $banList){
     }
 
     
-    Write-Line -Length 50 -Path $log
+    Write-Line -Length 38 -Path $log
 
 }
 

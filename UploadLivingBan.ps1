@@ -3,19 +3,14 @@
 UploadLivingBan.ps1
     
     2017-12-14 Initial Creation
-    2017-12-15 Add send newspage proof to ad
-    2017-12-18 Only send notification to ad if file is not found in newspage
-    2017-12-19 Don't send anything to ad
-    2018-01-03 Add 45218, 45221 to xml
-    2018-01-05 Rewrite algorithm: use ok file to determine which indd, inx, pdf, ok files to process
-    2018-05-22 Implement Modules, code optimization
 
 #>
-
 
 if (!($env:PSModulePath -match 'C:\\PowerShell\\_Modules')) {
     $env:PSModulePath = $env:PSModulePath + ';C:\PowerShell\_Modules\'
 }
+
+
 
 Import-Module WorldJournal.Log -Verbose -Force
 Import-Module WorldJournal.Email -Verbose -Force
@@ -23,14 +18,33 @@ Import-Module WorldJournal.Server -Verbose -Force
 
 $scriptPath = $MyInvocation.MyCommand.Path
 $scriptName = (($MyInvocation.MyCommand) -Replace ".ps1")
+$hasError   = $false
+
+$newlog     = New-Log -Path $scriptPath -LogFormat yyyyMMdd-HHmmss
+$log        = $newlog.FullName
+$logPath    = $newlog.Directory
+
+$mailFrom   = (Get-WJEmail -Name noreply).MailAddress
+$mailPass   = (Get-WJEmail -Name noreply).Password
+$mailTo     = (Get-WJEmail -Name lyu).MailAddress
+$mailSbj    = $scriptName
+$mailMsg    = ""
+
+$localTemp = "C:\temp\" + $scriptName + "\"
+if (!(Test-Path($localTemp))) {New-Item $localTemp -Type Directory | Out-Null}
+
+Write-Log -Verb "LOG START" -Noun $log -Path $log -Type Long -Status Normal
+Write-Line -Length 50 -Path $log
+
+###################################################################################
+
+
+
 $configXml  = $scriptName+".xml"
 $xmlPath    = ((Split-Path ($scriptPath)) + "\" + $configXml)
-
 $zuBanRoot  = (Get-WJPath -Name zuban).Path
 $newspage   = (Get-WJPath -Name newspage).Path
 $graphic    = (Get-WJPath -Name graphic).Path
-
-$mailMsg    = ""
 $newspageFileMsg = ""
 $graphicFileMsg  = ""
 $errMsg     = ""
@@ -41,33 +55,25 @@ $crErMsg    = ""
 
 
 
-# create log
-
-$newlog = New-Log -Path $scriptPath -LogFormat yyyyMMdd-HHmmss
-$log    = $newlog.FullName
-Write-Log -Verb "LOG START" -Noun $log -Path $log -Type Long -Status Normal
-
-
-
 # create date
 
 if ((Get-Date).Hour -le 6){
 
-    $toDay =  (Get-Date).AddDays(-1).ToString("yyyyMMdd")
+    $weekDate =  (Get-Date).AddDays(-1).ToString("yyyyMMdd")
     $weekDay = (Get-Date).AddDays(-1).DayOfWeek.value__
     if($weekDay -eq 0){ $weekDay = 7 }
     $workDate = (Get-Date).ToString("yyyyMMdd")
 
 } else {
 
-    $toDay = (Get-Date).ToString("yyyyMMdd")
+    $weekDate = (Get-Date).ToString("yyyyMMdd")
     $weekDay = (Get-Date).DayOfWeek.value__
     if($weekDay -eq 0){ $weekDay = 7 }
     $workDate = (Get-Date).AddDays(1).ToString("yyyyMMdd")
 
 }
 
-Write-Log -Verb "toDay" -Noun ($toDay + "("+ $weekDay +")") -Path $log -Type Short -Status Normal
+Write-Log -Verb "weekDate" -Noun ($weekDate + "("+ $weekDay +")") -Path $log -Type Short -Status Normal
 Write-Log -Verb "workDate" -Noun $workDate -Path $log -Type Short -Status Normal
 
 
@@ -95,7 +101,7 @@ if(Test-Path $xmlPath){
     }
 
     Write-Log -Verb "EXPECTED NEWSPAGE LIST" -Noun $expectedNewspage -Path $log -Type Long -Status Normal
-    Write-Log -Verb "EXPECTED GRAPHIC  LIST" -Noun $expectedGraphic -Path $log -Type Long -Status Normal
+    Write-Log -Verb "EXPECTED GRAPHIC LIST" -Noun $expectedGraphic -Path $log -Type Long -Status Normal
 
 }else{
 
@@ -104,7 +110,7 @@ if(Test-Path $xmlPath){
 }
 
 
-Write-Line -Length 38 -Path $log
+Write-Line -Length 50 -Path $log
 
 $banList = @(Get-ChildItem $zuBanRoot | Where-Object{$_.PSIsContainer -and $_.Name -match "^45\d{3}"}) | Where-Object {$xml.config.ban.id -contains ($_.Name).substring(0,5)} 
 
@@ -116,7 +122,7 @@ foreach($ban in $banList){
 
     foreach($date in $dateList){
 
-        Write-Log -Verb "DATE" -Noun $date.Name -Path $log -Type Long -Status Normal
+        Write-Log -Verb "DATE" -Noun $date.Name -Path $log -Type Short -Status Normal
 
         # check if folder date is valid
 
@@ -196,14 +202,14 @@ foreach($ban in $banList){
 
             }
 
-            Write-Log -Verb "newspage" -Noun $newspageSendDate -Path $log -Type Short -Status Normal
-            Write-Log -Verb "graphic " -Noun $graphicSendDate -Path $log -Type Short -Status Normal
+            Write-Log -Verb "Newspage" -Noun $newspageSendDate -Path $log -Type Short -Status Normal
+            Write-Log -Verb "Graphic " -Noun $graphicSendDate -Path $log -Type Short -Status Normal
 
 
 
 ############# COPY TO NEWSPAGE
 
-            if($newspageSendDate -eq $toDay){
+            if($newspageSendDate -eq $weekDate){
 
                 # newspage date equals current date
 
@@ -232,13 +238,13 @@ foreach($ban in $banList){
                         
                             try{
 
-                                Write-Log -Verb "COPY TO NEWSPAGE FROM" -Noun $n_from -Path $log -Type Long -Status Normal
+                                Write-Log -Verb "COPY FROM" -Noun $n_from -Path $log -Type Long -Status Normal
                                 Copy-Item $n_from $n_to -ErrorAction Stop
-                                Write-Log -Verb "COPY TO NEWSPAGE" -Noun $n_to -Path $log -Type Long -Status Good
+                                Write-Log -Verb "COPY TO" -Noun $n_to -Path $log -Type Long -Status Good
 
                             }catch{
 
-                                Write-Log -Verb "COPY TO NEWSPAGE" -Noun $n_to -Path $log -Type Long -Status Bad
+                                Write-Log -Verb "COPY TO" -Noun $n_to -Path $log -Type Long -Status Bad
                                 Write-Log -Verb "Exception" -Noun $_.Exception.Message -Path $log -Type Short -Status Normal
                                 $crErMsg += "COPY " + $n_from + " TO " + $n_to + " ERROR"
                                 $crErMsg += $_.Exception.Message + "`n"
@@ -279,7 +285,7 @@ foreach($ban in $banList){
 
 ############# COPY TO GRAPHIC
 
-            if($graphicSendDate -eq $toDay){
+            if($graphicSendDate -eq $weekDate){
 
                 # graphic date equals current date
             
@@ -305,14 +311,14 @@ foreach($ban in $banList){
                         
                         try{
                         
-                            Write-Log -Verb "COPY TO GRAPHIC FROM" -Noun $g_from_img -Path $log -Type Long -Status Normal
+                            Write-Log -Verb "COPY FROM" -Noun $g_from_img -Path $log -Type Long -Status Normal
                             Copy-Item $g_from_img $g_to_img -ErrorAction Stop
-                            Write-Log -Verb "COPY TO GRAPHIC" -Noun $g_to_img -Path $log -Type Long -Status Good
+                            Write-Log -Verb "COPY TO" -Noun $g_to_img -Path $log -Type Long -Status Good
                             $graphicFileMsg += $g_from_img + "`n"
 
                         }catch{
 
-                            Write-Log -Verb "COPY TO GRAPHIC" -Noun $g_to_img -Path $log -Type Long -Status Bad
+                            Write-Log -Verb "COPY TO" -Noun $g_to_img -Path $log -Type Long -Status Bad
                             Write-Log -Verb "Exception" -Noun $_.Exception.Message -Path $log -Type Short -Status Normal
                             $crErMsg += "COPY " + $g_from_img + " TO " + $g_to_img + " ERROR`n"
                             $crErMsg += $_.Exception.Message + "`n"
@@ -335,14 +341,14 @@ foreach($ban in $banList){
 
                             try{
 
-                                Write-Log -Verb "COPY TO GRAPHIC FROM" -Noun $g_from -Path $log -Type Long -Status Normal
+                                Write-Log -Verb "COPY FROM" -Noun $g_from -Path $log -Type Long -Status Normal
                                 Copy-Item $g_from $g_to -ErrorAction Stop
-                                Write-Log -Verb "COPY TO GRAPHIC" -Noun $g_to -Path $log -Type Long -Status Good
+                                Write-Log -Verb "COPY TO" -Noun $g_to -Path $log -Type Long -Status Good
                                 $graphicFileMsg += $g_from + "`n"
 
                             }catch{
 
-                                Write-Log -Verb "COPY TO GRAPHIC" -Noun $g_to -Path $log -Type Long -Status Bad
+                                Write-Log -Verb "COPY TO" -Noun $g_to -Path $log -Type Long -Status Bad
                                 Write-Log -Verb "Exception" -Noun $_.Exception.Message -Path $log -Type Short -Status Normal
                                 $crErMsg += "COPY " + $g_from + " TO " + $g_to + " ERROR"
                                 $crErMsg += $_.Exception.Message + "`n"
@@ -377,20 +383,21 @@ foreach($ban in $banList){
     }
 
     
-    Write-Line -Length 38 -Path $log
+    Write-Line -Length 50 -Path $log
 
 }
 
 
 Write-Log -Verb "EXPECTED NEWSPAGE LIST" -Noun $expectedNewspage -Path $log -Type Long -Status Normal
-Write-Log -Verb "EXPECTED GRAPHIC  LIST" -Noun $expectedGraphic -Path $log -Type Long -Status Normal
+Write-Log -Verb "EXPECTED GRAPHIC LIST" -Noun $expectedGraphic -Path $log -Type Long -Status Normal
 
-$mailSbj = $scriptName
-$mailMsg += "Upload script completed at: " + (Get-Date).ToString("yyyy/MM/dd HH:mm:ss") + "`n`n"
+
+
+# Flag hasError 
 
 if(!(Test-Path $xmlPath)){
     $mailMsg += "Config XML not found:`n" + $xmlPath + "`n"
-    $mailSbj = "ERROR " + $scriptName
+    $hasError = $true
 }
 
 if($newspageFileMsg -ne ""){
@@ -403,7 +410,7 @@ if($newspageFileMsg -ne ""){
 
 if($crErMsg -ne ""){
     $mailMsg += "File Copy Error:`n" + $crErMsg + "`n"
-    $mailSbj = "ERROR " + $scriptName
+    $hasError = $true
 }
 
 if($errMsg -ne ""){
@@ -413,18 +420,43 @@ if($errMsg -ne ""){
 
 if($expectedNewspage.Count -gt 0){
     $mailMsg += "Folder Not Found for Newspage:`n" + $expectedNewspage + "`n"
-    $mailSbj = "ERROR " + $scriptName
+    $hasError = $true
 }
 
 if($expectedGraphic.Count -gt 0){
     $mailMsg += "Folder Not Found for Graphic:`n" + $expectedGraphic + "`n"
-    $mailSbj = "ERROR " + $scriptName
+    $hasError = $true
 }
 
 
-Write-Log -Verb "LOG END" -Noun "" -Path $log -Type Long -Status Normal
 
-$mailFrom = (Get-WJEmail -Name noreply).MailAddress
-$mailPass = (Get-WJEmail -Name noreply).Password
-$mailTo = (Get-WJEmail -Name lyu).MailAddress
-Emailv2 -From $mailFrom -Pass $mailPass -To $mailTo -Subject $mailSbj -Body $mailMsg -ScriptPath $scriptPath -Attachments $log
+
+
+###################################################################################
+
+# Delete temp folder
+
+Write-Log -Verb "REMOVE" -Noun $localTemp -Path $log -Type Long -Status Normal
+try{
+    $temp = $localTemp
+    Remove-Item $localTemp -Recurse -Force -ErrorAction Stop
+    Write-Log -Verb "REMOVE" -Noun $temp -Path $log -Type Long -Status Good
+}catch{
+    $mailMsg = $mailMsg + (Write-Log -Verb "REMOVE" -Noun $temp -Path $log -Type Long -Status Bad -Output String) + "`n"
+    $mailMsg = $mailMsg + (Write-Log -Verb "Exception" -Noun $_.Exception.Message -Path $log -Type Short -Status Bad -Output String) + "`n"
+}
+
+Write-Line -Length 50 -Path $log
+Write-Log -Verb "LOG END" -Noun $log -Path $log -Type Long -Status Normal
+if($hasError){ $mailSbj = "ERROR " + $scriptName }
+
+$emailParam = @{
+    From    = $mailFrom
+    Pass    = $mailPass
+    To      = $mailTo
+    Subject = $mailSbj
+    Body    = $mailMsg
+    ScriptPath = $scriptPath
+    Attachment = $log
+}
+Emailv2 @emailParam

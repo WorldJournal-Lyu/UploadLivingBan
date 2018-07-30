@@ -232,6 +232,9 @@ foreach($ban in $banList){
                         $n_banId = ($okfile.Name).SubString(0,(($okfile.Name).length-3))
                         $n_from  = (($okfile.FullName).SubString(0,(($okfile.FullName).length-3))+".pdf")
                         $n_to    = ($newspage+$date.Name.Substring(0,8)+"\"+$n_banId+".pdf")
+                        Write-Log -Verb "n_banId" -Noun $n_banId -Path $log -Type Short -Status Normal
+                        Write-Log -Verb "n_from" -Noun $n_from -Path $log -Type Short -Status Normal
+                        Write-Log -Verb "n_to" -Noun $n_to -Path $log -Type Short -Status Normal
 
                         # exception for 45218: only 45218.pdf needs to go to newspage, 45218-8 is for SF only
                         if($n_banId -ne "45218-8"){
@@ -308,6 +311,8 @@ foreach($ban in $banList){
 
                         $g_from_img = $file.FullName
                         $g_to_img   = ($graphic+$file.Name)
+                        Write-Log -Verb "g_from_img" -Noun $g_from_img -Path $log -Type Short -Status Normal
+                        Write-Log -Verb "g_to_img" -g_to_img $n_from -Path $log -Type Short -Status Normal
                         
                         try{
                         
@@ -338,6 +343,9 @@ foreach($ban in $banList){
                             $g_banId = ($okfile.Name).SubString(0,(($okfile.Name).length-3))
                             $g_from = (($okfile.FullName).SubString(0,(($okfile.FullName).length-3))+$okExtension)
                             $g_to   = ($graphic+$g_banId+$okExtension)
+                            Write-Log -Verb "g_banId" -Noun $g_banId -Path $log -Type Short -Status Normal
+                            Write-Log -Verb "g_from" -Noun $g_from -Path $log -Type Short -Status Normal
+                            Write-Log -Verb "g_to" -Noun $g_to -Path $log -Type Short -Status Normal
 
                             try{
 

@@ -10,6 +10,9 @@ if (!($env:PSModulePath -match 'C:\\PowerShell\\_Modules')) {
     $env:PSModulePath = $env:PSModulePath + ';C:\PowerShell\_Modules\'
 }
 
+Get-Module -ListAvailable WorldJournal.* | Remove-Module -Force
+Get-Module -ListAvailable WorldJournal.* | Import-Module -Force
+
 $scriptPath = $MyInvocation.MyCommand.Path
 $scriptName = (($MyInvocation.MyCommand) -Replace ".ps1")
 $hasError   = $false
